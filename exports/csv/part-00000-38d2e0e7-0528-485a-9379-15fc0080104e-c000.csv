@@ -1,0 +1,2 @@
+ticket_id,client_id,datetime_creation,demande,type_demande,priorite,equipe_support
+102,2,2026-06-06 10:20:00,Erreur lors du téléchargement d'un fichier,Problème technique,Moyenne,Support Technique

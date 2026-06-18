@@ -274,17 +274,24 @@ PYSPARK_DRIVER_PYTHON = python
 * Attribution d'équipes de support
 * Stockage des résultats dans SQLite
 
----
+```mermaid
+flowchart LR
+    A[Ticket Generator<br/>ticket.py]
+    B[Redpanda Topic<br/>client_tickets]
+    C[Streaming Processor<br/>ticket-stream]
+    D[Data Aggregation]
+    E[JSON Export]
+    F[CSV Export]
+    G[Parquet Export]
+    H[(SQLite Storage)]
 
-# Auteur
+    A --> B
+    B --> C
+    C --> D
 
-**Noel Emmanuel**
-
-GitHub : https://github.com/Noel974
-
-LinkedIn : https://www.linkedin.com/in/Antoine-Noel/
-
-Email : [noelantoine974@outlook.fr](mailto:noelantoine974@outlook.fr)
-
-
-spark-submit   --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.8   --driver-class-path ~/spark/jars/sqlite-jdbc-3.45.1.0.jar   --jars ~/spark/jars/sqlite-jdbc-3.45.1.0.jar   script/ticket_stream.py
+    D --> E
+    D --> F
+    D --> G
+    D --> H
+```
+```
