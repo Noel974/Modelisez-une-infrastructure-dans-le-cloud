@@ -2,11 +2,11 @@ import json
 import random
 import time
 from datetime import datetime
-from confluent_kafka import Producer
+from confluent_kafka import Producer # type: ignore
 
 # Configuration du producteur Redpanda
 producer = Producer({
-    "bootstrap.servers": "localhost:9092"
+    'bootstrap.servers': 'redpanda:9092'
 })
 
 # Listes pour générer des données aléatoires

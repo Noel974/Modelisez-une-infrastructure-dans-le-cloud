@@ -36,13 +36,13 @@ schema = (
 )
 
 # ============================================================
-# 3. LECTURE KAFKA
+# 3. LECTURE KAFKA (REDPANDA)
 # ============================================================
 
 df = (
     spark.readStream
     .format("kafka")
-    .option("kafka.bootstrap.servers", "172.17.224.1:9092")
+    .option("kafka.bootstrap.servers", "redpanda:9092")
     .option("subscribe", "client_tickets")
     .load()
 )
@@ -58,7 +58,7 @@ json_df = (
 )
 
 # ============================================================
-# 5. AJOUT EQUIPE SUPPORT
+# 5. AJOUT ÉQUIPE SUPPORT
 # ============================================================
 
 json_df = json_df.withColumn(
@@ -71,7 +71,13 @@ json_df = json_df.withColumn(
 )
 
 # ============================================================
-# 6. FOREACHBATCH
+# 6. CHEMIN SQLITE (IMPORTANT FIX DOCKER)
+# ============================================================
+
+DB_PATH = "jdbc:sqlite:/app/exports/data.db"
+
+# ============================================================
+# 7. WRITE BATCH FUNCTION
 # ============================================================
 
 def write_to_sqlite(batch_df, batch_id):
@@ -83,31 +89,28 @@ def write_to_sqlite(batch_df, batch_id):
     (
         batch_df.write
         .format("jdbc")
-        .option(
-            "url",
-            "jdbc:sqlite:/mnt/c/Users/noela/Desktop/Mes projets/Data/Modélisez une infrastructure dans le cloud/database/data.db"
-        )
+        .option("url", DB_PATH)
         .option("dbtable", "tickets")
         .option("driver", "org.sqlite.JDBC")
         .mode("append")
         .save()
     )
 
-    # Export JSON
+    # JSON
     (
         batch_df.write
         .mode("append")
         .json("exports/json")
     )
 
-    # Export Parquet
+    # PARQUET
     (
         batch_df.write
         .mode("append")
         .parquet("exports/parquet")
     )
 
-    # Export CSV
+    # CSV
     (
         batch_df.write
         .option("header", True)
@@ -118,7 +121,7 @@ def write_to_sqlite(batch_df, batch_id):
     print(f"Batch {batch_id} traité.")
 
 # ============================================================
-# 7. STREAMING QUERY
+# 8. STREAMING QUERY
 # ============================================================
 
 query = (

@@ -1,0 +1,26 @@
+FROM eclipse-temurin:17-jdk
+
+# Install Python + pip + curl + tar
+RUN apt-get update && apt-get install -y python3 python3-pip curl tar
+
+# Install Spark 3.5.1 (Apache officiel)
+ENV SPARK_VERSION=3.5.1
+ENV HADOOP_VERSION=3
+ENV SPARK_HOME=/opt/spark
+ENV PATH="$SPARK_HOME/bin:$PATH"
+
+RUN curl -L https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz \
+    -o /tmp/spark.tgz && \
+    mkdir -p /opt/spark && \
+    tar -xzf /tmp/spark.tgz -C /opt/spark --strip-components=1 && \
+    rm /tmp/spark.tgz
+
+# Install PySpark WITHOUT upgrading pip
+RUN pip install --break-system-packages pyspark==3.5.1
+
+WORKDIR /app
+
+COPY ticket_stream.py /app/
+COPY jars/sqlite-jdbc-3.45.1.0.jar /opt/spark/jars/
+
+CMD ["bash", "-c", "spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1 --driver-class-path /opt/spark/jars/sqlite-jdbc-3.45.1.0.jar ticket_stream.py"]

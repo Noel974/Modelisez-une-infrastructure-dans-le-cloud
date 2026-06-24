@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+
+  redpanda:
+    build:
+      context: .
+      dockerfile: redpanda/Dockerfile
+    container_name: redpanda
+    ports:
+      - "9092:9092"
+      - "9644:9644"
+
+  ticket-generator:
+    build:
+      context: ./script
+      dockerfile: Dockerfile.generator
+    container_name: ticket-generator
+    depends_on:
+      - redpanda
+    volumes:
+      - ./exports:/app/exports
+
+  spark-stream:
+    build:
+      context: ./script
+      dockerfile: Dockerfile.spark
+    container_name: spark-stream
+    depends_on:
+      - redpanda
+    volumes:
+      - ./exports:/app/exports

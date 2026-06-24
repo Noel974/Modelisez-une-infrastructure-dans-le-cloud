@@ -21,6 +21,7 @@ Projet réalisé par **Noel Emmanuel**
 * [Vérification des messages](#vérification-des-messages)
 * [Installation de PySpark](#installation-de-pyspark)
 * [Architecture du projet](#architecture-du-projet)
+* [Video de démonstration](#vVideo-de-demonstration)
 
 ---
 
@@ -264,7 +265,7 @@ PYSPARK_DRIVER_PYTHON = python
 
 ---
 
-# Fonctionnalités
+## Fonctionnalités
 
 * Génération automatique de tickets clients
 * Streaming temps réel avec Redpanda
@@ -294,4 +295,7 @@ flowchart LR
     D --> G
     D --> H
 ```
-```
+---
+
+# Video demonstration 
+Video qui explique le deroulement de la pipeline ETL avec test d'analyse de la base de donnée via sqllite lien de la video `https://youtu.be/SwyGCAomZ8I`
