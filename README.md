@@ -45,7 +45,6 @@ Le projet simule un système de gestion de tickets clients afin d'analyser les d
 * PySpark
 * Redpanda
 * Docker
-* SQLite
 * SQLiteStudio
 
 ---
@@ -66,7 +65,17 @@ python --version
 docker --version
 java -version
 ```
+## Création de l'environnement virtuel Python
 
+Créer un environnement virtuel :
+
+```bash
+python -m venv .venv
+```
+ et pour activé 
+ ```bash
+ .venv\Scripts\activate
+ ```
 ---
 
 # Installation de Redpanda avec Docker

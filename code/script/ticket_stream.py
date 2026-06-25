@@ -1,0 +1,134 @@
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import from_json, col, when
+from pyspark.sql.types import StructType, StringType, IntegerType
+
+# ============================================================
+# 1. SPARK SESSION
+# ============================================================
+
+spark = (
+    SparkSession.builder
+    .appName("ClientTicketsStreaming")
+    .config(
+        "spark.jars.packages",
+        ",".join([
+            "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0",
+            "org.xerial:sqlite-jdbc:3.45.1.0"
+        ])
+    )
+    .getOrCreate()
+)
+
+spark.sparkContext.setLogLevel("WARN")
+
+# ============================================================
+# 2. SCHEMA
+# ============================================================
+
+schema = (
+    StructType()
+    .add("ticket_id", IntegerType())
+    .add("client_id", IntegerType())
+    .add("datetime_creation", StringType())
+    .add("demande", StringType())
+    .add("type_demande", StringType())
+    .add("priorite", StringType())
+)
+
+# ============================================================
+# 3. LECTURE KAFKA (REDPANDA)
+# ============================================================
+
+df = (
+    spark.readStream
+    .format("kafka")
+    .option("kafka.bootstrap.servers", "redpanda:9092")
+    .option("subscribe", "client_tickets")
+    .load()
+)
+
+# ============================================================
+# 4. PARSING JSON
+# ============================================================
+
+json_df = (
+    df.selectExpr("CAST(value AS STRING)")
+      .select(from_json(col("value"), schema).alias("data"))
+      .select("data.*")
+)
+
+# ============================================================
+# 5. AJOUT ÉQUIPE SUPPORT
+# ============================================================
+
+json_df = json_df.withColumn(
+    "equipe_support",
+    when(col("type_demande") == "Incident", "Support N1")
+    .when(col("type_demande") == "Problème technique", "Support Technique")
+    .when(col("type_demande") == "Maintenance", "Equipe Maintenance")
+    .when(col("type_demande") == "Demande d'information", "Support Client")
+    .otherwise("Support Général")
+)
+
+# ============================================================
+# 6. CHEMIN SQLITE (IMPORTANT FIX DOCKER)
+# ============================================================
+
+DB_PATH = "jdbc:sqlite:/app/exports/data.db"
+
+# ============================================================
+# 7. WRITE BATCH FUNCTION
+# ============================================================
+
+def write_to_sqlite(batch_df, batch_id):
+
+    if batch_df.isEmpty():
+        return
+
+    # SQLite
+    (
+        batch_df.write
+        .format("jdbc")
+        .option("url", DB_PATH)
+        .option("dbtable", "tickets")
+        .option("driver", "org.sqlite.JDBC")
+        .mode("append")
+        .save()
+    )
+
+    # JSON
+    (
+        batch_df.write
+        .mode("append")
+        .json("exports/json")
+    )
+
+    # PARQUET
+    (
+        batch_df.write
+        .mode("append")
+        .parquet("exports/parquet")
+    )
+
+    # CSV
+    (
+        batch_df.write
+        .option("header", True)
+        .mode("append")
+        .csv("exports/csv")
+    )
+
+    print(f"Batch {batch_id} traité.")
+
+# ============================================================
+# 8. STREAMING QUERY
+# ============================================================
+
+query = (
+    json_df.writeStream
+    .foreachBatch(write_to_sqlite)
+    .option("checkpointLocation", "checkpoint")
+    .start()
+)
+
+query.awaitTermination()
